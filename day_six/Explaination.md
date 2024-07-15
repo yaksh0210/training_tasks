@@ -1,9 +1,10 @@
 # Project 01 - 1 Hour
 
 ### Deploying a Scalable Web Application with Persistent Storage and Advanced Automation
+
 #### Objective: Deploy a scalable web application using Docker Swarm and Kubernetes, ensuring data persistence using a single shared volume, and automate the process using advanced shell scripting.
 
-### Overview:
+## Overview:
 
 * Step 1: Set up Docker Swarm and create a service.
 
@@ -224,15 +225,16 @@ chmod +x deploy.sh
 <img src="im_three.png">
 
 <br>
+
 ---
 
 
 # Project 02 - 1 Hour
-#### Comprehensive Deployment of a Multi-Tier Application with CI/CD Pipeline
+### Comprehensive Deployment of a Multi-Tier Application with CI/CD Pipeline
 
-#### Objective: Deploy a multi-tier application (frontend, backend, and database) using Docker Swarm and Kubernetes, ensuring data persistence using a single shared volume across multiple containers, and automating the entire process using advanced shell scripting and CI/CD pipelines.
+##### Objective: Deploy a multi-tier application (frontend, backend, and database) using Docker Swarm and Kubernetes, ensuring data persistence using a single shared volume across multiple containers, and automating the entire process using advanced shell scripting and CI/CD pipelines.
 
-### Overview:
+## Overview:
 
 + Step 1: Set up Docker Swarm and create a multi-tier service.
 + Step 2: Set up Kubernetes using Minikube.

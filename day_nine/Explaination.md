@@ -15,12 +15,13 @@
 
 #### 1. installation step for minikube
 
-    ```bash 
-    sudo apt-get update
-    ```
-    ```bash    
-    sudo apt-get install -y apt-transport-https ca-certificates curl
-    ```
+```bash 
+sudo apt-get update
+```
+
+```bash    
+sudo apt-get install -y apt-transport-https ca-certificates curl
+```
 #### 2. Add Kubernetes apt repository and key
 ```bash
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg

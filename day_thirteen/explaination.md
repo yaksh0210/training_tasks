@@ -98,10 +98,21 @@ public class App {
     
     + Multi-branch pipeline job configured in Jenkins.
     
+    <img src="step1.png">
+
+    <br>
+
+    <img src="step2.png">
+
     + Jenkinsfile defining build and deployment steps.
-    
+
+    <img src="step3.png">
+
     + Environment variables managed using Jenkins environment variable settings.
 
     <br>
 
     <img src="pipeline.png">
+
+
+

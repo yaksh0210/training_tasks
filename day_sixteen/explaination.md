@@ -255,7 +255,7 @@ ansible target -i inv.ini -m ping
 
 ## Output 
 
-<img src="task5.png">
+<img src="tas_5.png">
 
 
 

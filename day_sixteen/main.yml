@@ -1,0 +1,35 @@
+---
+- name: Install package, configure service, and manage files
+  hosts: web
+  become: yes
+
+  tasks:
+  - name: Install sysstat package
+    apt:
+      name: sysstat
+      state: latest
+
+  - name: Configure nginx service
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+
+  - name: Create a new file
+    file:
+      path: /tmp/newfile.txt
+      state: touch
+
+  - name: Modify an existing file
+    lineinfile:
+      path: /tmp/newfile.txt
+      line: "Welcome to our server"
+
+  - name: Delete a file
+    file:
+      path: /tmp/newfile.txt
+      state: absent
+
+  - name: Validate changes
+    debug:
+      msg: "Changes made successfully"

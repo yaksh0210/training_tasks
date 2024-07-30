@@ -1,0 +1,15 @@
+- name: download list of commands
+  hosts: web
+  become: yes
+  tasks:
+  - name: run error handling
+    block:
+    - get_url:
+        url: https://iitd-plos.github.io/col100/references/Linuxppt.pdf
+        dest: /home/
+    - debug: msg="Linux command File downloaded"
+    rescue:
+    - debug: msg="linux command appears to be down."
+    - get_url:
+        url: https://www.loggly.com/wp-content/uploads/2015/05/Linux-Cheat-Sheet-Sponsored-By-Loggly.pdf
+        dest: /home/

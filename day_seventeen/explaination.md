@@ -133,7 +133,7 @@ GRANT {{ user.privileges }} ON *.* TO '{{ user.name }}'@'%';
     
     + Content: A script to perform the backup of the PostgreSQL database. This script should be referenced in the cron job defined in the playbook.
 
-```sh
+```bash
 #!/bin/bash
 
 # Set variables
@@ -160,4 +160,3 @@ find ${BACKUP_DIR} -type f -mtime +7 -delete
 ```
 
 
-<img src="playbook_run.png">

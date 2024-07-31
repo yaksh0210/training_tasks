@@ -109,13 +109,15 @@ pipeline {
                 sh 'docker build -t yaksh0212/java-app .'
             }
         }
-        stage('Push Docker Image') {
+        stage('Push Docker Image') 
+        {
             steps {
                 withCredentials([usernamePassword(credentialsId: '9312c423-da11-4cd1-857a-9c5446d91de6')]) {
                     sh 'docker login'
                     sh 'docker push yaksh0212/java-app'
                 }
             }
+        }
 ```
 
    
@@ -131,4 +133,14 @@ pipeline {
     + Required plugins installed (e.g., Git, Docker, Pipeline).
 
 
+<br>
 
+<img src="s4.png">
+
+<br>
+
+<br>
+
+<img src="s5.png">
+    
+<br>

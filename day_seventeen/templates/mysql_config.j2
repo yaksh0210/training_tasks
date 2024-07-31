@@ -1,0 +1,6 @@
+-- MySQL configuration template
+
+{% for user in mysql_users %}
+CREATE USER '{{ user.name }}'@'%' IDENTIFIED BY '{{ user.password }}';
+GRANT {{ user.privileges }} ON *.* TO '{{ user.name }}'@'%';
+{% endfor %}

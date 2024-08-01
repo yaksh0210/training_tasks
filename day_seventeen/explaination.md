@@ -116,16 +116,33 @@ target ansible_host=3.1xx.xx.2x ansible_user=ubuntu ansible_ssh_private_key_file
 
 3. ***Jinja2 Template***
     
-    + Filename: templates/pg_hba.conf.j2
+    + Filename: templates/mysql.cnf.j2
     
     + Content: Defines the MySQL configuration file (pg_hba.conf) using Jinja2 templates to manage access controls dynamically.
 
 ```jinja
-{% for user in mysql_users %}
-CREATE USER '{{ user.name }}'@'%' IDENTIFIED BY '{{ user.password }}';
-GRANT {{ user.privileges }} ON *.* TO '{{ user.name }}'@'%';
-{% endfor %}
+# Here is entries for some specific programs
+# The following values assume you have at least 32M ram
+
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mysql.conf.d/
 ```
+
++ now sending jinja2 file to server we will add below yml logic to it
+
+```yml
+ name: Copy MySQL configuration file
+    template:
+      src: /home/einfochips/training_task/day_seventeen/templates/mysql.cnf.j2
+      dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+    notify: Restart MySQL
+```
+
+
+<img src="after_jijna2.png">
+
+
+
 
 4. ***Backup Script***
     
@@ -160,3 +177,28 @@ find ${BACKUP_DIR} -type f -mtime +7 -delete
 ```
 
 
++ now we will add some modification in yml to copy backup script and set it in cron job on the server
+
+```yml
+name: Copy MySQL backup script
+    copy:
+      src: /home/einfochips/training_task/day_seventeen/scripts/backup.sh
+      dest: /usr/local/bin/mysql_backup.sh
+      mode: '0755'
+
+  - name: Configure backup cron job
+    cron:
+      name: "mysql backup"
+      minute: "0"
+      hour: "2"
+      day: "*"
+      month: "*"
+      weekday: "*"
+      job: "/usr/local/bin/mysql_backup.sh"
+      state: present
+
+```
+
+##
+
+<img src="after_backup.png">

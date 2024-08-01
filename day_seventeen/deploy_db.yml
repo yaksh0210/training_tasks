@@ -1,7 +1,6 @@
 - name: setup Mysql
-  hosts: server
+  hosts: web
   become: yes
-
   vars:
     db_name: "my_database"
     db_user: "my_user"
@@ -10,27 +9,30 @@
     backup_schedule: "daily"
 
   tasks:
-  - name: Installing Mysql
-    package:
-      name: "{{item}}"
-      state: present
+  - name: Install MySQL server
+    apt:
       update_cache: yes
-
-    loop:
+      name: "{{ item }}"
+      state: present
+    with_items:
     - mysql-server
     - mysql-client
     - python3-mysqldb
     - libmysqlclient-dev
-    become: yes
 
-  - name: start and enable mysql service
+  - name: Copy MySQL configuration file
+    template:
+      src: /home/einfochips/training_task/day_seventeen/templates/mysql.cnf.j2
+      dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+    notify: Restart MySQL
 
+  - name: Ensure MySQL service is running and enabled
     service:
       name: mysql
       state: started
       enabled: yes
 
-  - name: creating mysql user
+  - name: Create MySQL user
     mysql_user:
       name: "{{ db_user }}"
       password: "{{ db_password }}"
@@ -38,18 +40,24 @@
       host: '%'
       state: present
 
-  - name: create database
+  - name: Create MySQL database
     mysql_db:
       name: "{{ db_name }}"
       state: present
 
-  - name: configure backup directory
+  - name: Configure backup directory
     file:
       path: "{{ backup_dir }}"
       state: directory
       mode: '0755'
 
-  - name: configure backup cron job
+  - name: Copy MySQL backup script
+    copy:
+      src: /home/einfochips/training_task/day_seventeen/scripts/backup.sh
+      dest: /usr/local/bin/mysql_backup.sh
+      mode: '0755'
+
+  - name: Configure backup cron job
     cron:
       name: "mysql backup"
       minute: "0"
@@ -57,11 +65,11 @@
       day: "*"
       month: "*"
       weekday: "*"
-      job: "mysqldump -u {{ db_user }} -p {{ db_password }} {{ db_name }} > {{ backup_dir }}/{{ db_name }}_{{ backup_schedule }}.sql"
+      job: "/usr/local/bin/mysql_backup.sh"
       state: present
 
   handlers:
-  - name: Restart mysql
+  - name: Restart MySQL
     service:
       name: mysql
       state: restarted

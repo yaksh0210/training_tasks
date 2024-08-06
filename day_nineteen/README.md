@@ -252,16 +252,8 @@ target2 ansible_host=5X.3XX.X4.X1 ansible_user=ubuntu ansible_ssh_private_key_fi
 
 ```
 
-+ then in vars/main.yml for passing credentials
++ then in vars/main.yml for passing credentials we will modify with our requiremetns
 
-
-```yml
-root_password: pass@123
-admin_user: Admin
-admin_password: Admin@123
-db_name: sampledb
-password_validation_policy: 1
-```
 
 
 ### For the Backend (nodejs)

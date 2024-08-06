@@ -1,0 +1,28 @@
+- name: Installing Ca-certificates
+  apt:
+    name: ca-certificates
+    state: present
+    update_cache: yes
+
+- name: Downloading GPG key
+  shell: |
+    curl -o /tmp/nodesource.gpg.key https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+  args:
+    warn: false
+
+- name: Adding GPG key
+  apt_key:
+    file: "/tmp/nodesource.gpg.key"
+    state: present
+
+- name: Installing Node.js LTS repository
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_{{ NODEJS_VERSION }}.x {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+
+- name: Install Node.js and npm
+  apt:
+    name:
+    - nodejs
+    state: present

@@ -1,0 +1,5 @@
+root_password: pass@123
+admin_user: Admin
+admin_password: Admin@123
+db_name: sampledb
+password_validation_policy: 1

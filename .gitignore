@@ -1,4 +1,5 @@
 inv.ini
-*.ini
+*.ini*
 sql.yml
 deploy_database.yml
+inventory.ini

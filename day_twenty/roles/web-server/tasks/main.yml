@@ -1,0 +1,24 @@
+---
+- name: Installing Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Start Nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Configure Nginx
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+  notify: Restart Nginx
+
+- name: Nginx is running or not
+  service:
+    name: nginx
+    state: started
+    enabled: yes

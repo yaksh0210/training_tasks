@@ -1,3 +1,29 @@
+# - name: New Application
+#   hosts: all
+#   become: yes
+#   tasks:
+#   - name: update_cache
+#     apt:
+#       update_cache: yes
+
+# - hosts: database
+#   become: true
+#   roles:
+#   - roles/database
+
+# - hosts: web-server
+#   become: true
+#   roles:
+#   - roles/web-server
+
+# - hosts: application
+#   become: true
+#   roles:
+#   - roles/application
+
+
+
+
 - name: New Application
   hosts: all
   become: yes
@@ -6,17 +32,17 @@
     apt:
       update_cache: yes
 
-- hosts: database
+- hosts: all
   become: true
   roles:
   - roles/database
 
-- hosts: web-server
+- hosts: all
   become: true
   roles:
   - roles/web-server
 
-- hosts: application
+- hosts: all
   become: true
   roles:
   - roles/application

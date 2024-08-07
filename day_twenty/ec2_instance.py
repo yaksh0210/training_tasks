@@ -2,7 +2,7 @@ import json
 import boto3
 
 def get_inventory():
-    ec2 = boto3.client('ec2', region_name='us-east-2')  # Specify your region
+    ec2 = boto3.client('ec2', region_name='ap-south-1')  # Specify your region
     response = ec2.describe_instances(Filters=[{'Name': 'tag:Role', 'Values': ['webserver']}])
 
     inventory = {

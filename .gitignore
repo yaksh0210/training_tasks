@@ -1,7 +1,7 @@
-inv.ini/
-*.ini*/
-sql.yml/
-deploy_database.yml/
-inventory.ini/
+inv.ini
+inventory.ini
+sql.yml
+deploy_database.yml
+inventory.ini
 roles/databse/vars/main.yml/
 ansible.cfg

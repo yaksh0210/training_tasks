@@ -233,7 +233,6 @@ max(node_filesystem_size_bytes - node_filesystem_free_bytes)
 <br>
 <hr>
 
-
 ***7. Configuring Alertmanager***
 
 ### Task: 
@@ -244,6 +243,33 @@ max(node_filesystem_size_bytes - node_filesystem_free_bytes)
 
 + Configure Alertmanager with Prometheus.
 + Create routing rules to manage alert notifications based on severity and service type.
+
+
++ First installation of an alertmanager will
+
++ installing the alertmanager
+
+```sh
+wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz
+```
+
++ unzip the files
+
+```sh
+tar -xvf alertmanager-0.27.0.linux-amd64.tar.gz 
+cd alertmanager-0.27.0.linux-amd64/
+```
+
+```sh
+./alertmanager
+```
+
+## Output
+
+<img src="./images/pic10.png">
+
+<br>
+<hr>
 
 ***8. Writing Alerting Rules***
 
@@ -257,6 +283,24 @@ max(node_filesystem_size_bytes - node_filesystem_free_bytes)
 
 + Ensure alerts are correctly generated and sent to Alertmanager.
 
+
+```yml
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - localhost:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+  - "alert_rule.yml"
+ 
+```
+
+
 ***9. Setting Up Notification Channels (Email, Slack, etc.)***
 
 ### Task: 
@@ -269,6 +313,26 @@ max(node_filesystem_size_bytes - node_filesystem_free_bytes)
 
 + Integrate Slack for real-time alerts and notifications.
 
++ Rules for alertmanger.yml
+
+```yml
+route:
+  receiver: admin
+
+receivers:
+- name: admin
+  slack_configs:
+  - channel: "#test"
+    api_url: "<api-url-link>"
+```
+
+## Output 
+
+<img src="./images/notify.png">
+
+<br>
+<hr>
+
 ***10. Hands-on Exercise: Creating Alerts***
 
 ### Task: 
@@ -280,3 +344,21 @@ max(node_filesystem_size_bytes - node_filesystem_free_bytes)
 + Simulate a scenario where a node exceeds 90% CPU usage and ensure alerts are triggered and sent to both Email and Slack.
 
 + Validate the alerts in both notification channels.
+
+
+
+```yml
+groups:
+- name: example
+  rules:
+    - record: job:node_cpu_seconds:avg_idle
+      expr: avg without(cpu)(rate(node_cpu_seconds_total{mode="idle"}[5m]))
+
+    - alert: NodeExporterDown
+      expr: up{job="node"} == 0 
+```
+
+## Output
+
+<img src="./images/alert_slack.png">
+<br>

@@ -141,7 +141,7 @@ sudo apt install apache2
 
 + Terminate EC2 Instances:
 
-    + Stop and terminate all EC2 instances.
+    + Stop and terminate all EC2 instances
 
 <img src="./images/instance_shutdown.png">
 

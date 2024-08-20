@@ -43,7 +43,7 @@
     
     + Ensure the region is parameterized using a Terraform variable.
 
-```json
+```hcl
 provider "aws" {
   region = var.aws_region
 }
@@ -56,7 +56,7 @@ provider "aws" {
     
     + Define security groups allowing HTTP and SSH access to the EC2 instance, and MySQL access to the RDS instance.
 
-```json
+```hcl
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   enable_dns_support = true
@@ -79,7 +79,7 @@ resource "aws_subnet" "public" {
 
 + for security groups
 
-```json
+```hcl
 resource "aws_security_group" "ec2_sg" {
   vpc_id = aws_vpc.main.id
 
@@ -118,7 +118,7 @@ resource "aws_security_group" "ec2_sg" {
     
     + Use Terraform variables to define instance parameters like AMI ID and instance type.
 
-```json
+```hcl
 resource "aws_instance" "app_server" {  
   ami           = var.ami_id
   instance_type = var.instance_type
@@ -155,7 +155,7 @@ resource "aws_instance" "app_server" {
     + Ensure the DB instance is publicly accessible, and configure security groups to allow access from the EC2 instance.
 
 
-```json
+```hcl
 resource "aws_db_instance" "mysql" {
   identifier        = "mydb"
   engine            = "mysql"
@@ -189,7 +189,7 @@ resource "aws_db_subnet_group" "main" {
 
 + For RDS Security Group
 
-```json
+```hcl
 resource "aws_security_group" "rds_sg" {
   vpc_id = aws_vpc.main.id
 
@@ -219,7 +219,7 @@ resource "aws_security_group" "rds_sg" {
 
     + Allow the EC2 instance to access the S3 bucket by assigning the appropriate IAM role and policy.
 
-```json
+```hcl
 resource "aws_s3_bucket" "static_assets" {
   bucket = "my-static-assets-bucket"
   tags = {
@@ -232,7 +232,7 @@ resource "aws_s3_bucket" "static_assets" {
 
     + Define Terraform outputs to display the EC2 instance’s public IP address, the RDS instance’s endpoint, and the S3 bucket name.
 
-```json
+```hcl
 output "ec2_public_ip" {
   value = aws_instance.app_server.public_ip
 }

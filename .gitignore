@@ -5,3 +5,9 @@ deploy_database.yml
 inventory.ini
 roles/databse/vars/main.yml/
 ansible.cfg
+terraform.tfstate  
+terraform.tfstate.backup  
+variable.tf
+.terraform.lock.hcl
+.terraform/providers/registry.terraform.io/hashicorp/aws/5.63.0/linux_amd64/LICENSE.txt
+.terraform/providers/registry.terraform.io/hashicorp/aws/5.63.0/linux_amd64/terraform-provider-aws_v5.63.0_x5

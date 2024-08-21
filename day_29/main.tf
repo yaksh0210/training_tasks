@@ -14,10 +14,20 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-west-2a" 
+  availability_zone       = "ap-south-1a" 
   map_public_ip_on_launch = true
   tags = {
     Name = "public_subnet"
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "ap-south-1b" 
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "public_subnet_2"
   }
 }
 
@@ -114,16 +124,16 @@ resource "aws_db_instance" "mysql" {
   
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   
-  db_subnet_group_name  = aws_db_subnet_group.main.name
+  db_subnet_group_name  = aws_db_subnet_group.yaksh.name
 
   tags = {
     Name = "mydb"
   }
 }
 
-resource "aws_db_subnet_group" "main" {
-  name        = "main"
-  subnet_ids   = [aws_subnet.public.id]  
+resource "aws_db_subnet_group" "yaksh" {
+  name        = "yaksh"
+  subnet_ids   = [aws_subnet.public.id, aws_subnet.public_2.id]  
   tags = {
     Name = "main_db_subnet_group"
   }
@@ -137,8 +147,8 @@ output "rds_endpoint" {
   value = aws_db_instance.mysql.endpoint
 }
 
-resource "aws_s3_bucket" "static_assets" {
-  bucket = "my-static-assets-bucket"
+resource "aws_s3_bucket" "static_assets_my" {
+  bucket = "my-assets-bucket-yaksh"
   tags = {
     Name = "static_assets"
   }

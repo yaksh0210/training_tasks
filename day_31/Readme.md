@@ -177,18 +177,6 @@ provisioner "local-exec" {
 
 + Workspace Deployment: Deploy the infrastructure separately in the dev and prod workspaces.
 
-### 5. Validation and Testing:
-
-+ Apache Installation Verification: After the deployment, verify that Apache is installed and running on the EC2 instance by accessing the public IP address in a web browser.
-
-<br>
-
-<img src="./images/apache_running.png">
-
-<br>
-
-+ Workspace Separation: Confirm that each workspace has its own isolated infrastructure and state files.
-
 + Create and switch to the dev workspace:
 
 ```sh
@@ -211,6 +199,20 @@ terraform workspace new prod
 ```sh
 terraform apply -auto-approve
 ```
+
+
+
+
+### 5. Validation and Testing:
+
++ Apache Installation Verification: After the deployment, verify that Apache is installed and running on the EC2 instance by accessing the public IP address in a web browser.
+
+<br>
+
+<img src="./images/apache_running.png">
+
+<br>
+
 
 + Provisioner Logs: Review the output from the local-exec provisioner to ensure it indicates successful deployment.
 

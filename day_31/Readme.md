@@ -189,11 +189,32 @@ provisioner "local-exec" {
 
 + Workspace Separation: Confirm that each workspace has its own isolated infrastructure and state files.
 
-<img src="">
++ Create and switch to the dev workspace:
+
+```sh
+terraform workspace new dev
+```
+
++ Deploy the infrastructure in the dev workspace:
+
+```sh
+terraform apply -auto-approve
+```
+
++ Create and switch to the prod workspace:
+
+```sh
+terraform workspace new prod
+```
++ Deploy the infrastructure in the prod workspace:
+
+```sh
+terraform apply -auto-approve
+```
 
 + Provisioner Logs: Review the output from the local-exec provisioner to ensure it indicates successful deployment.
 
-<img src="">
+<img src="./images/local_exec.png">
 
 
 ### 6. Resource Cleanup:
@@ -207,8 +228,6 @@ provisioner "local-exec" {
 <img src="./images/instance_destroy.png">
 
 <br>
-
-+ Workspace Management: Confirm that the resources are destroyed separately in each workspace and that the state files are updated accordingly.
 
 
 

@@ -1,12 +1,12 @@
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-south-1"
 }
 
 module "aws_infrastructure" {
   source           = "./modules/aws_infrastructure"
-  ami_id           = "ami-0a0e5d9c7acc336f1"  
+  ami_id           = "ami-0c2af51e265bd5e0e"  
   instance_type    = "t2.micro"
-  key_name         = "SPkey"         
+  key_name         = "My_key"         
   bucket_name      = "my-uni-buc-name" 
-  private_key_path = "~/.ssh/SPkey.pem"         
+  private_key_path = "~/.ssh/My_key.pem"         
 }

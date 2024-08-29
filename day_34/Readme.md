@@ -319,7 +319,7 @@ helm install backend ./backend-0.1.0.tgz
 
 <br>
 
-<img src="./images/inst_frontend.png">
+<img src="./images/inst_backend.png">
 
 ### 6. Manage Helm Secrets
 

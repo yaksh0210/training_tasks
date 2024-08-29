@@ -110,5 +110,5 @@ database:
   host: "mydbinstance.cxqq6ia24yor.ap-south-1.rds.amazonaws.com"
   name: "mydbinstance"
   user: "admin"
-  password: "root1234"
+  password: "your password"
   port: 3306

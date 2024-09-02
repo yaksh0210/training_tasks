@@ -1,104 +1,160 @@
-# Project 
+# Project
 
-## Comprehensive AWS S3 Management and Static Website Hosting
+## Deploying a Path-Based Routing Web Application on AWS
 
 ### Objective:
 
-+ To test your knowledge and skills in managing AWS S3 storage classes, lifecycle management, bucket policies, access control lists (ACLs), and hosting a static website on S3. You will apply their understanding in a practical scenario, ensuring you have mastered the critical aspects of AWS S3.
++ To evaluate your skills in deploying a web application on AWS using EC2 instances, configuring security groups, and setting up an Application Load Balancer (ALB) with path-based routing. You will deploy two simple web applications, configure the ALB to route traffic based on the URL path, and terminate all resources once the project is complete.
 
 ## Project Scenario:
 
-+ You are tasked with creating and managing an S3 bucket for a fictional company, "TechVista Inc.," that hosts a static website for displaying their product portfolio. The website will have different types of content, including high-resolution images, which require careful storage management to optimize costs. Additionally, the company has strict security requirements for accessing the content.
++ A small company needs to deploy two lightweight web applications, "App1" and "App2," on AWS. The traffic to these applications should be routed through a single Application Load Balancer (ALB) based on the URL path. The company has opted for t2.micro instances for cost efficiency.
 
-## Project Steps and Deliverables:
+### Project Steps and Deliverables:
 
-### **1. Create and Configure an S3 Bucket:**
+### 1. EC2 Instance Setup (30 minutes):
 
++ Launch EC2 Instances:
+    
+    + Launch four EC2 t2.micro instances using the Amazon Linux 2 AMI.
 
-+ Create an S3 bucket named techvista-portfolio-[your-initials].
-
-+ Enable versioning on the bucket.
-
-
-## Output 
 
 <img src="./images/pic1.png">
 <br>
 
+
 <img src="./images/pic2.png">
 <br>
+
 
 <img src="./images/pic3.png">
 <br>
 
-+ Set up the bucket for static website hosting.
+
++ SSH into each instance and deploy a simple web application:
+        
+    + Deploy "App1" on two instances.
+        
+    + Deploy "App2" on the other two instances.
+
++ Assign tags to the instances for identification (e.g., "App1-Instance1," "App1-Instance2," "App2-Instance1," "App2-Instance2").
+
++ to deploy App1 and App2 first we need to install apache2
+
+```sh
+sudo apt update
+```
+
+```sh
+sudo apt install apache2
+```
+
++ Then Navigate to path ```/var/www/html``` and modify the ``index.html``
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>APP 1 </h1>
+</body>
+</html>
+```
+
++ same process for another instance and make change from App1 to App2 
+
+### 2. Security Group Configuration (20 minutes):
+
++ Create Security Groups:
+    
+    + Create a security group for the EC2 instances that allows inbound HTTP (port 80) and SSH (port 22) traffic from your IP address.
 
 <img src="./images/pic4.png">
-<br>
 
-+ Upload the provided static website files (HTML, CSS, images).
++ before creatring ALB we have to create target groups
+
+<img src="./images/pic7.png">
+
+<img src="./images/pic8.png">
+
++ Create a security group for the ALB that allows inbound traffic on port 80.
 
 <img src="./images/pic5.png">
-<br>
 
 
-+ Ensure the website is accessible via the S3 website URL.
-
-<br>
-<img src="./images/pic6.png">
-<br>
-
-<br>
-<img src="./images/pic7.png">
-<br>
-
-<hr>
-
-### **2.Implement S3 Storage Classes:**
-
-+ Classify the uploaded content into different S3 storage classes (e.g., Standard, Intelligent-Tiering, Glacier).
-
-+ Justify your choice of storage class for each type of content (e.g., HTML/CSS files vs. images).
-
-<br>
-<img src="./images/pic9.png">
-<br>
-
-<br>
-<img src="./images/pic8.png">
-<br>
++ Attach the appropriate security groups to the EC2 instances and ALB.
 
 
-### **3.Lifecycle Management:**
+### 3. Application Load Balancer Setup with Path-Based Routing (40 minutes):
 
-+ Create a lifecycle policy that transitions older versions of objects to a more cost-effective storage class (e.g., Standard to Glacier).
++ Create an Application Load Balancer (ALB):
+    
+    + Set up an ALB in the same VPC and subnets as your EC2 instances.
+    
+    + Configure the ALB with two target groups:
+    
+       + Target Group 1: For "App1" instances.
+    
+       + Target Group 2: For "App2" instances.
+    
+    + Register the appropriate EC2 instances with each target group.
 
++ Configure Path-Based Routing:
+    
+    + Set up path-based routing rules on the ALB:
+    
+       + Route traffic to "App1" instances when the URL path is /app1.
+    
+       + Route traffic to "App2" instances when the URL path is /app2.
+    
+    + Set up health checks for each target group to ensure that the instances are healthy and available.
+
+<img src="./images/alb.png">
 
 <br>
-<img src="./images/pic10.png">
-<br>
+
+<img src="./images/rule.png">
+
+### 4. Testing and Validation (20 minutes):
+
++ Test Path-Based Routing:
+
+    + Access the ALB's DNS name and validate that requests to /app1 are correctly routed to the "App1" instances and that /app2 requests are routed to the "App2" instances.
+
++ Security Validation:
+    
+    + Attempt to access the EC2 instances directly via their public IPs to ensure that only your IP address can SSH into the instances.
+
+<img src="./images/op1.png">
 
 <br>
-<img src="./images/pic11.png">
+
+<img src="./images/op2.png">
+
 <br>
 
+### 5. Resource Termination (10 minutes):
 
-+ Set up a policy to delete non-current versions of objects after 90 days.
++ Terminate EC2 Instances:
 
-<img src="./images/pic12.png">
-<br>
+    + Stop and terminate all EC2 instances
 
-+ Verify that the lifecycle rules are correctly applied.
-
-<img src="./images/pic14.png">
-<br>
-
-### **4.Configure Bucket Policies and ACLs:**
-
-+ Create and attach a bucket policy that allows read access to everyone for the static website content.
-
-+ Restrict access to the S3 management console for specific IAM users using the bucket policy.
+<img src="./images/instance_shutdown.png">
 
 
-<img src="./images/pic15.png">
-<br>
++ Delete Load Balancer and Target Groups:
+
+    + Delete the ALB and the associated target groups.
+
+<img src="./images/target_dele.png">
+
+
++ Cleanup Security Groups:
+
+    + Delete the security groups created for the project.
+
+<img src="./images/secgrp_delete.png">

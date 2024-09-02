@@ -1,243 +1,235 @@
-# Project: 
-
-**Advanced Terraform with Modules, Functions, State Locks, Remote State Management, and Variable Configuration**
+### Project: Advanced Terraform with Provisioners, Modules, and Workspaces
 
 ## Project Objective:
 
-+ This project will test your skills in using Terraform modules, functions, variables, state locks, and remote state management. 
++ This project is designed to evaluate participants' understanding of Terraform provisioners, modules, and workspaces. 
 
-+ The project requires deploying infrastructure on AWS using a custom Terraform module and managing the state remotely in an S3 bucket, while testing the locking mechanism with DynamoDB. 
++ The project involves deploying a basic infrastructure on AWS using Terraform modules, executing remote commands on the provisioned resources using provisioners, and managing multiple environments using Terraform workspaces.
 
-+ Participants will also configure variables and outputs using functions.
++ All resources should be within the AWS Free Tier limits.
 
-### Project Overview:
+## Project Overview:
+
++ Participants will create a Terraform configuration that deploys an EC2 instance and an S3 bucket using a custom Terraform module. 
+
++ The project will also require the use of Terraform provisioners to execute scripts on the EC2 instance. 
+
++ Finally, participants will manage separate environments (e.g., dev and prod) using Terraform workspaces.
+
+## Specifications:
+
+### 1. Terraform Modules:
+
++ Create a reusable module to deploy an EC2 instance and an S3 bucket.
+
++ The EC2 instance should be of type t2.micro, and the S3 bucket should be configured for standard storage.
+
++ The module should accept input variables for the instance type, AMI ID, key pair name, and bucket name.
+
++ Outputs should include the EC2 instance’s public IP and S3 bucket’s ARN.
+
+### 2. Terraform Provisioners:
+
++ Use remote-exec and local-exec provisioners to perform post-deployment actions on the EC2 instance.
+
++ The remote-exec provisioner should be used to connect to the EC2 instance via SSH and run a script that installs Apache HTTP Server.
+
++ The local-exec provisioner should be used to output a message on the local machine indicating the deployment status, such as "EC2 instance successfully provisioned with Apache."
 
 
-+ You will create a Terraform configuration that uses a custom module to deploy a multi-component infrastructure on AWS. The state files will be stored remotely in an S3 bucket, and DynamoDB will handle state locking. Additionally, the project will involve creating a flexible and reusable Terraform module, using input variables (tfvars) and Terraform functions to parameterize configurations.
+### 3. Terraform Workspaces:
 
-**Specifications:**
++ Implement Terraform workspaces to manage separate environments (e.g., dev and prod).
 
-+ Terraform Modules: Create a reusable module that can deploy both an EC2 instance and an S3 bucket.
++ Each workspace should deploy the same infrastructure (EC2 and S3) but with different configurations (e.g., different tags or bucket names).
 
-+ Terraform Functions: Use Terraform built-in functions to manipulate and compute variable values (e.g., length, join, lookup).
-
-+ State Management: Store the Terraform state in an S3 bucket and configure DynamoDB for state locking to prevent concurrent changes.
-
-+ Variable Configuration (tfvars): Parameterize the infrastructure using variables for instance type, region, and other configurable options.
-
-+ Outputs: Use outputs to display important information such as EC2 instance details and the S3 bucket name after deployment.
++ Ensure that the state for each workspace is managed separately to prevent conflicts between environments.
 
 ### Key Tasks:
 
-### 1. Remote State Management:
+### 1. Module Development:
 
-+ **S3 Bucket for State:**
-
-    + Create an S3 bucket using Terraform (this can be separate from the custom module).
-
-    + Configure Terraform to store the state file in the S3 bucket.
-
-+ State Locking with DynamoDB:
-
-Create a DynamoDB table using Terraform (or manually if required) to store the state lock information.
-Configure Terraform to use this DynamoDB table for state locking.
-
-```hcl
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "yaksh-terraform-bucket"
-
-  tags = {
-    Name = "yaksh Bucket"
-  }
-}
-
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "yaksh-locks"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-
-  tags = {
-    Name = "State Lock Table"
-  }
-}
-
-output "s3_bucket_name" {
-  value = aws_s3_bucket.terraform_state.bucket
-}
-
-output "dynamodb_table_name" {
-  value = aws_dynamodb_table.terraform_locks.name
-}
-```
-
-### 2. Terraform Module Creation:
-
-+ **Custom Module:**
-
-    + Create a Terraform module to deploy the following AWS resources:
-
-        + EC2 instance: Use an AMI for the region and allow SSH access using a security group.
-
-        + S3 bucket: Create an S3 bucket for application data.
++ Module Setup: Create a directory for the module (e.g., modules/aws_infrastructure).
 
 ```css
-project/
-  ├── creation/
-  │   ├── modules/
-  │   |   ├── main.tf
-  │   |   ├── variables.tf
-  │   |   └── outputs.tf
-  |   ├── main.tf  
-  |   ├── variables.tf
-  |   ├── outputs.tf 
-  |   ├── backend.tf  
-  |
-  ├── state_save/
-  |   └── main.tf
-  |
+├── main.tf
+├── modules
+│   └── aws_infrastructure
+│       ├── main.tf
+│       ├── outputs.tf
+│       └── variables.tf
 ```
 
-
-+ Use Terraform variables (txvars) to parameterize important aspects such as:
-    
-    + Instance Type: Allow the instance type to be configurable (e.g., t2.micro).
-    
-    + Region: Parameterize the AWS region so that the module can be reused across regions.
-    
-    + Bucket Name: Use a variable to set the S3 bucket name.
-
++ Resource Definitions: Define the resources for an EC2 instance and an S3 bucket within the module.
 
 ```hcl
-
-resource "aws_security_group" "allow_ssh" {
-  name        = "allow_ssh"
-  description = "Allow SSH access"
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_instance" "app_server" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  security_groups = [aws_security_group.allow_ssh.name]
+resource "aws_instance" "ec2_instance" {
+  ami            = var.ami_id
+  instance_type  = var.instance_type
+  key_name       = var.key_name
 
   tags = {
-    Name = join("-", [var.instance_name, "server"])
+    Name = "my-ec2-instance-yaksh"
   }
 }
 
-resource "aws_s3_bucket" "app_bucket" {
+
+resource "aws_s3_bucket" "s3_bucket" {
   bucket = var.bucket_name
-
-  tags = {
-    Name = join("-", [var.bucket_name, "bucket"])
-  }
 }
 
 ```
-**Terraform Functions:**
 
-+ Use Terraform functions in your module to manipulate and process the variables. For example:
-    
-    + Use join to combine strings for resource names.
-    
-    + Use lookup to set default values if a variable is not provided.
-    
-    + Use length to count the number of instances or resources.
-
-
-### 3. Input Variables and Configuration (txvars):
-+ Define input variables to make the infrastructure flexible:
-    
-    + EC2 instance type.
-    
-    + S3 bucket name.
-    
-    + AWS region.
-    
-    + Any other variable relevant to the infrastructure.
-
-+ Use the default argument for variables where appropriate.
++ Variable Inputs: Define input variables for instance type, AMI ID, key pair name, and S3 bucket name.
 
 ```hcl
-variable "bucket" {
-    type = string
-    default = "yaksh-terraform-bucket"
-}
-
-variable "instance_name" {
-    type = string
-    default = "yaksh-app"
+variable "ami_id" {
+  description = "AMI ID for the EC2 instance"
+  type        = string
 }
 
 variable "instance_type" {
-    type = string
-    default = "t2.micro"
+  description = "Type of the EC2 instance"
+  type        = string
 }
 
-variable "region" {
-    type = string
-    default = "ap-south-1"
+variable "key_name" {
+  description = "Name of the SSH key pair"
+  type        = string
+}
+
+variable "bucket_name" {
+  description = "Name of the S3 bucket"
+  type        = string
+}
+
+variable "private_key_path" {
+  description = "Path to the private key for SSH access"
+  type        = string
 }
 ```
 
-### 4. Output Configuration:
++ Outputs: Define outputs for the EC2 instance's public IP and the S3 bucket's ARN.
 
-+ Set up Terraform outputs to display key information after the infrastructure is created:
-    
-    + EC2 Public IP: Output the public IP of the EC2 instance.
+```hcl
+output "ec2_instance_public_ip" {
+  description = "Public IP of the EC2 instance"
+  value       = aws_instance.ec2_instance.public_ip
+}
 
-    <img src="./images/pic1.png">
- 
-    + S3 Bucket Name: Output the name of the S3 bucket created.
+output "s3_bucket_arn" {
+  description = "ARN of the S3 bucket"
+  value       = aws_s3_bucket.s3_bucket.arn
+}
+```
 
-    <img src="./images/pic4.png">
-    
-    + Region: Output the region where the resources were deployed.
+<img src="./images/bucket.png">
 
-### 5. Testing State Locking and Remote State:
+<br>
 
-+ State Locking:
-    
-    + Attempt to run terraform apply from two different terminals simultaneously to test state locking.
-    
-    + Confirm that DynamoDB properly handles the state lock, preventing concurrent updates.
+<img src="./images/instance.png">
 
-<img src="./images/pic3.png">
+<br>
 
-+ Remote State Management:
+### 2. Main Terraform Configuration:
 
-    + Verify that Terraform state is being stored in the S3 bucket and that updates are reflected in the remote state file.
++ Main Config Setup: In the root directory, create a Terraform configuration that calls the custom module.
 
-<img src="./images/pic5.png">
++ Backend Configuration: Configure Terraform to use local state storage for simplicity (optional for Free Tier compliance).
+
+### 3. Provisioner Implementation:
+
++ Remote Execution: Use the remote-exec provisioner to SSH into the EC2 instance and execute a script that installs Apache.
+
+```hcl
+ provisioner "remote-exec" {
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y apache2",
+      "sudo systemctl start apache2",
+      "sudo systemctl enable apache2"
+    ]
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file(var.private_key_path)
+      host        = self.public_ip
+    }
+  }
+```
+
+<img src="./images/ssh_success.png">
+
++ Local Execution: Use the local-exec provisioner to print a confirmation message on the local machine after successful deployment.
+
+
+```hcl
+provisioner "local-exec" {
+  command = "echo 'EC2 instance successfully provisioned with Apache' >> terraform_output.log"
+}
+```
+
+### 4. Workspace Management:
+
++ Workspace Creation: Create Terraform workspaces for dev and prod.
+
++ Environment-Specific Configurations: Customize the EC2 instance tags and S3 bucket names for each workspace to differentiate between environments.
+
++ Workspace Deployment: Deploy the infrastructure separately in the dev and prod workspaces.
+
++ Create and switch to the dev workspace:
+
+```sh
+terraform workspace new dev
+```
+
++ Deploy the infrastructure in the dev workspace:
+
+```sh
+terraform apply -auto-approve
+```
+
++ Create and switch to the prod workspace:
+
+```sh
+terraform workspace new prod
+```
++ Deploy the infrastructure in the prod workspace:
+
+```sh
+terraform apply -auto-approve
+```
 
 
 
 
-### 6. Apply and Modify Infrastructure:
+### 5. Validation and Testing:
 
-+ Initial Deployment:
-    
-    + Use terraform plan and terraform apply to deploy the infrastructure.
-    
-    + Verify that the EC2 instance, S3 bucket, and all configurations are properly set up.
++ Apache Installation Verification: After the deployment, verify that Apache is installed and running on the EC2 instance by accessing the public IP address in a web browser.
 
-<img src="./images/pic7.png">
+<br>
 
-+ Infrastructure Changes:
-    
-    + Modify one of the variables (e.g., change the instance type or add tags) and re-run terraform apply.
-    
-    + Observe how Terraform plans and applies only the necessary changes, with state locking in effect.
+<img src="./images/apache_running.png">
 
-<img src="./images/pic4.png">
+<br>
+
+
++ Provisioner Logs: Review the output from the local-exec provisioner to ensure it indicates successful deployment.
+
+<img src="./images/local_exec.png">
+
+
+### 6. Resource Cleanup:
+
++ Destroy Resources: Use terraform destroy to remove the resources in both workspaces.
+
+<img src="./images/destroy_process.png">
+
+<br>
+
+<img src="./images/instance_destroy.png">
+
+<br>
+
+
+

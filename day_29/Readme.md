@@ -1,87 +1,122 @@
 # Project: 
 
-## Deploying a Multi-Tier Architecture Application on AWS using Terraform
+**Advanced Terraform with Modules, Functions, State Locks, Remote State Management, and Variable Configuration**
 
-### Project Objective:
+## Project Objective:
 
-+ This project will assess your ability to deploy a multi-tier architecture application on AWS using Terraform.The deployment will involve using Terraform variables, outputs, and change sets.The multi-tier architecture will include an EC2 instance, an RDS MySQL DB instance, and an S3 bucket.
++ This project will test your skills in using Terraform modules, functions, variables, state locks, and remote state management. 
+
++ The project requires deploying infrastructure on AWS using a custom Terraform module and managing the state remotely in an S3 bucket, while testing the locking mechanism with DynamoDB. 
+
++ Participants will also configure variables and outputs using functions.
 
 ### Project Overview:
 
-+ You are required to write Terraform configuration files to automate the deployment of a multi-tier application on AWS. The architecture should consist of:
 
-1. EC2 Instance: A t2.micro instance serving as the application server.
-2. RDS MySQL DB Instance: A t3.micro instance for the database backend.
-3. S3 Bucket: For storing static assets or configuration files.
++ You will create a Terraform configuration that uses a custom module to deploy a multi-component infrastructure on AWS. The state files will be stored remotely in an S3 bucket, and DynamoDB will handle state locking. Additionally, the project will involve creating a flexible and reusable Terraform module, using input variables (tfvars) and Terraform functions to parameterize configurations.
 
-### Specifications:
+**Specifications:**
 
-+ **EC2 Instance:** Use the t2.micro instance type with a public IP, allowing HTTP and SSH access.
++ Terraform Modules: Create a reusable module that can deploy both an EC2 instance and an S3 bucket.
 
-+ **RDS MySQL DB Instance:** Use the t3.micro instance type with a publicly accessible endpoint.
++ Terraform Functions: Use Terraform built-in functions to manipulate and compute variable values (e.g., length, join, lookup).
 
-+ **S3 Bucket:** Use for storing static assets, configuration files, or backups.
++ State Management: Store the Terraform state in an S3 bucket and configure DynamoDB for state locking to prevent concurrent changes.
 
-+ **Terraform Configuration:**
++ Variable Configuration (tfvars): Parameterize the infrastructure using variables for instance type, region, and other configurable options.
 
-
-+ Utilize Terraform variables to parameterize the deployment (e.g., instance type, database name).
-
-+ Use Terraform outputs to display important information (e.g., EC2 public IP, RDS endpoint).
-
-+ Implement change sets to demonstrate how Terraform manages infrastructure changes.
-
-+ **No Terraform Modules:** Focus solely on the core Terraform configurations without custom or external modules.
++ Outputs: Use outputs to display important information such as EC2 instance details and the S3 bucket name after deployment.
 
 ### Key Tasks:
 
-### 1. Setup Terraform Configuration:
+### 1. Remote State Management:
 
-+ Provider Configuration:
-    
-    + Configure the AWS provider to specify the region for deployment.
-    
-    + Ensure the region is parameterized using a Terraform variable.
++ **S3 Bucket for State:**
 
-```hcl
-provider "aws" {
-  region = var.aws_region
-}
-```
+    + Create an S3 bucket using Terraform (this can be separate from the custom module).
 
+    + Configure Terraform to store the state file in the S3 bucket.
 
-+ VPC and Security Groups:
-    
-    + Create a VPC with a public subnet for the EC2 instance.
-    
-    + Define security groups allowing HTTP and SSH access to the EC2 instance, and MySQL access to the RDS instance.
++ State Locking with DynamoDB:
+
+Create a DynamoDB table using Terraform (or manually if required) to store the state lock information.
+Configure Terraform to use this DynamoDB table for state locking.
 
 ```hcl
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_support = true
-  enable_dns_hostnames = true
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "yaksh-terraform-bucket"
+
   tags = {
-    Name = "main_vpc"
+    Name = "yaksh Bucket"
   }
 }
 
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-west-2a" 
-  map_public_ip_on_launch = true
-  tags = {
-    Name = "public_subnet"
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "yaksh-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
   }
+
+  tags = {
+    Name = "State Lock Table"
+  }
+}
+
+output "s3_bucket_name" {
+  value = aws_s3_bucket.terraform_state.bucket
+}
+
+output "dynamodb_table_name" {
+  value = aws_dynamodb_table.terraform_locks.name
 }
 ```
 
-+ for security groups
+### 2. Terraform Module Creation:
+
++ **Custom Module:**
+
+    + Create a Terraform module to deploy the following AWS resources:
+
+        + EC2 instance: Use an AMI for the region and allow SSH access using a security group.
+
+        + S3 bucket: Create an S3 bucket for application data.
+
+```css
+project/
+  ├── creation/
+  │   ├── modules/
+  │   |   ├── main.tf
+  │   |   ├── variables.tf
+  │   |   └── outputs.tf
+  |   ├── main.tf  
+  |   ├── variables.tf
+  |   ├── outputs.tf 
+  |   ├── backend.tf  
+  |
+  ├── state_save/
+  |   └── main.tf
+  |
+```
+
+
++ Use Terraform variables (txvars) to parameterize important aspects such as:
+    
+    + Instance Type: Allow the instance type to be configurable (e.g., t2.micro).
+    
+    + Region: Parameterize the AWS region so that the module can be reused across regions.
+    
+    + Bucket Name: Use a variable to set the S3 bucket name.
+
 
 ```hcl
-resource "aws_security_group" "ec2_sg" {
-  vpc_id = aws_vpc.main.id
+
+resource "aws_security_group" "allow_ssh" {
+  name        = "allow_ssh"
+  description = "Allow SSH access"
 
   ingress {
     from_port   = 22
@@ -89,205 +124,120 @@ resource "aws_security_group" "ec2_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "ec2_sg"
-  }
 }
-```
 
-+ EC2 Instance:
-    
-    + Define the EC2 instance using a t2.micro instance type.
-    
-    + Configure the instance to allow SSH and HTTP access.
-    
-    + Use Terraform variables to define instance parameters like AMI ID and instance type.
-
-```hcl
-resource "aws_instance" "app_server" {  
+resource "aws_instance" "app_server" {
   ami           = var.ami_id
   instance_type = var.instance_type
-  subnet_id     = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-  
+  security_groups = [aws_security_group.allow_ssh.name]
+
   tags = {
-    Name = "app_server"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "echo 'Hello from EC2' > /var/www/html/index.html"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.ssh_key_path)  
-      host        = self.public_ip
-    }
+    Name = join("-", [var.instance_name, "server"])
   }
 }
+
+resource "aws_s3_bucket" "app_bucket" {
+  bucket = var.bucket_name
+
+  tags = {
+    Name = join("-", [var.bucket_name, "bucket"])
+  }
+}
+
 ```
+**Terraform Functions:**
 
-
-
-+ RDS MySQL DB Instance:
++ Use Terraform functions in your module to manipulate and process the variables. For example:
     
-    + Create a t3.micro MySQL DB instance within the same VPC.
+    + Use join to combine strings for resource names.
     
-    + Use Terraform variables to define DB parameters like DB name, username, and password.
+    + Use lookup to set default values if a variable is not provided.
     
-    + Ensure the DB instance is publicly accessible, and configure security groups to allow access from the EC2 instance.
+    + Use length to count the number of instances or resources.
 
 
-```hcl
-resource "aws_db_instance" "mysql" {
-  identifier        = "mydb"
-  engine            = "mysql"
-  instance_class    = "db.t3.micro"
-  db_name           = var.db_name
-  username          = var.db_username
-  password          = var.db_password
-  
-  allocated_storage = 20
-  
-  publicly_accessible = false
-  
-  vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  
-  db_subnet_group_name  = aws_db_subnet_group.main.name
+### 3. Input Variables and Configuration (txvars):
++ Define input variables to make the infrastructure flexible:
+    
+    + EC2 instance type.
+    
+    + S3 bucket name.
+    
+    + AWS region.
+    
+    + Any other variable relevant to the infrastructure.
 
-  tags = {
-    Name = "mydb"
-  }
-}
-
-resource "aws_db_subnet_group" "main" {
-  name        = "main"
-  subnet_ids   = [aws_subnet.public.id]  
-  tags = {
-    Name = "main_db_subnet_group"
-  }
-}
-
-```
-
-+ For RDS Security Group
++ Use the default argument for variables where appropriate.
 
 ```hcl
-resource "aws_security_group" "rds_sg" {
-  vpc_id = aws_vpc.main.id
-
-  ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    security_groups = [aws_security_group.ec2_sg.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "rds_sg"
-  }
+variable "bucket" {
+    type = string
+    default = "yaksh-terraform-bucket"
 }
 
-```
-+ S3 Bucket:
+variable "instance_name" {
+    type = string
+    default = "yaksh-app"
+}
 
-    + Create an S3 bucket for storing static files or configurations.
+variable "instance_type" {
+    type = string
+    default = "t2.micro"
+}
 
-    + Allow the EC2 instance to access the S3 bucket by assigning the appropriate IAM role and policy.
-
-```hcl
-resource "aws_s3_bucket" "static_assets" {
-  bucket = "my-static-assets-bucket"
-  tags = {
-    Name = "static_assets"
-  }
+variable "region" {
+    type = string
+    default = "ap-south-1"
 }
 ```
 
-+ Outputs:
+### 4. Output Configuration:
 
-    + Define Terraform outputs to display the EC2 instance’s public IP address, the RDS instance’s endpoint, and the S3 bucket name.
++ Set up Terraform outputs to display key information after the infrastructure is created:
+    
+    + EC2 Public IP: Output the public IP of the EC2 instance.
 
-```hcl
-output "ec2_public_ip" {
-  value = aws_instance.app_server.public_ip
-}
+    <img src="./images/pic1.png">
+ 
+    + S3 Bucket Name: Output the name of the S3 bucket created.
 
-output "rds_endpoint" {
-  value = aws_db_instance.mysql.endpoint
-}
-```
+    <img src="./images/pic4.png">
+    
+    + Region: Output the region where the resources were deployed.
+
+### 5. Testing State Locking and Remote State:
+
++ State Locking:
+    
+    + Attempt to run terraform apply from two different terminals simultaneously to test state locking.
+    
+    + Confirm that DynamoDB properly handles the state lock, preventing concurrent updates.
+
+<img src="./images/pic3.png">
+
++ Remote State Management:
+
+    + Verify that Terraform state is being stored in the S3 bucket and that updates are reflected in the remote state file.
+
+<img src="./images/pic5.png">
 
 
-### 2. Apply and Manage Infrastructure:
+
+
+### 6. Apply and Modify Infrastructure:
 
 + Initial Deployment:
-
-    + Run terraform init to initialize the configuration.
-
-    + Use terraform plan to review the infrastructure changes before applying.
-
-    + Deploy the infrastructure using terraform apply, and ensure that the application server, database, and S3 bucket are set up correctly.
-
-+ Change Sets:
     
-    + Make a minor change in the Terraform configuration, such as modifying an EC2 instance tag or changing an S3 bucket policy.
+    + Use terraform plan and terraform apply to deploy the infrastructure.
     
-    + Use terraform plan to generate a change set, showing what will be modified.
+    + Verify that the EC2 instance, S3 bucket, and all configurations are properly set up.
+
+<img src="./images/pic7.png">
+
++ Infrastructure Changes:
     
-    + Apply the change set using terraform apply and observe how Terraform updates the infrastructure without disrupting existing resources.
-
-
-<img src="./images/init.png">
-
-### 3. Testing and Validation:
-
-+ Validate the setup by:
+    + Modify one of the variables (e.g., change the instance type or add tags) and re-run terraform apply.
     
-    + Accessing the EC2 instance via SSH and HTTP.
-    
-    + Connecting to the MySQL DB instance from the EC2 instance.
-    
-    + Verifying that the EC2 instance can read and write to the S3 bucket.
+    + Observe how Terraform plans and applies only the necessary changes, with state locking in effect.
 
-+ Check the Terraform outputs to ensure they correctly display the relevant information.
-
-<img src="./images/plan.png">
-
-
-### 4. Resource Termination:
-
-+ Once the deployment is complete and validated, run terraform destroy to tear down all the resources created by Terraform.
-
-+ Confirm that all AWS resources (EC2 instance, RDS DB, S3 bucket, VPC) are properly deleted.
-
-
-<img src="./images/apply.png">
-
-<br>
-
-<img src="./images/apply_op.png">
+<img src="./images/pic4.png">

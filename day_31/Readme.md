@@ -1,235 +1,471 @@
-### Project: Advanced Terraform with Provisioners, Modules, and Workspaces
+# Project: Automation (IaaC) Terraform on AWS Assessment Project
 
-## Project Objective:
+## Project Overview
 
-+ This project is designed to evaluate participants' understanding of Terraform provisioners, modules, and workspaces. 
++ This capstone project is designed to assess participants' knowledge and practical skills with Terraform, specifically focusing on AWS. The project will require deploying a complete infrastructure using Terraform, emphasizing the usage of state lock, variables, .tfvars files, modules, functions, workspaces, and lifecycle rules. 
 
-+ The project involves deploying a basic infrastructure on AWS using Terraform modules, executing remote commands on the provisioned resources using provisioners, and managing multiple environments using Terraform workspaces.
++ The deployment will be restricted to AWS Free Tier resources to avoid unnecessary costs.
 
-+ All resources should be within the AWS Free Tier limits.
+## Project Objectives
 
-## Project Overview:
++ Deploy a multi-tier architecture on AWS using Terraform.
++ Implement state locking to manage concurrent changes.
++ Use variables and .tfvars files to parameterize configurations.
++ Create and use Terraform modules to promote reusability and organization.
++ Utilize functions to dynamically configure resources.
++ Manage multiple environments using Terraform workspaces.
++ Implement lifecycle rules to control resource creation, updates, and deletion.
 
-+ Participants will create a Terraform configuration that deploys an EC2 instance and an S3 bucket using a custom Terraform module. 
+## Project Requirements
 
-+ The project will also require the use of Terraform provisioners to execute scripts on the EC2 instance. 
+### 1. Infrastructure Design
 
-+ Finally, participants will manage separate environments (e.g., dev and prod) using Terraform workspaces.
++ The project will involve deploying a basic 3-tier web application architecture, which includes the following components:
 
-## Specifications:
+1. VPC: Create a Virtual Private Cloud (VPC) with public and private subnets across two availability zones.
+2. Security Groups: Define security groups to control inbound and outbound traffic for the application and database tiers.
+3. EC2 Instances: Deploy EC2 instances in the public subnets for the web servers (Application Tier).
+4. RDS Instance: Deploy an RDS MySQL instance in the private subnet for the database (Database Tier).
+5. S3 Bucket: Create an S3 bucket to store static files, with versioning enabled.
+6. Elastic IPs: Assign Elastic IPs to the EC2 instances.
+7. IAM Role: Create an IAM role with the necessary permissions and attach it to the EC2 instances.
 
-### 1. Terraform Modules:
+### 2. Terraform State Management
 
-+ Create a reusable module to deploy an EC2 instance and an S3 bucket.
++  Implement remote state storage using an S3 bucket to store the Terraform state file.
++  Use DynamoDB for state locking to prevent concurrent modifications.
 
-+ The EC2 instance should be of type t2.micro, and the S3 bucket should be configured for standard storage.
-
-+ The module should accept input variables for the instance type, AMI ID, key pair name, and bucket name.
-
-+ Outputs should include the EC2 instance’s public IP and S3 bucket’s ARN.
-
-### 2. Terraform Provisioners:
-
-+ Use remote-exec and local-exec provisioners to perform post-deployment actions on the EC2 instance.
-
-+ The remote-exec provisioner should be used to connect to the EC2 instance via SSH and run a script that installs Apache HTTP Server.
-
-+ The local-exec provisioner should be used to output a message on the local machine indicating the deployment status, such as "EC2 instance successfully provisioned with Apache."
+### 3. Variables and tfvars
 
 
-### 3. Terraform Workspaces:
++ Define input variables for resources like VPC CIDR, instance types, database username/password, and S3 bucket names.
++ Use .tfvars files to pass different configurations for environments (e.g., dev.tfvars, prod.tfvars).
 
-+ Implement Terraform workspaces to manage separate environments (e.g., dev and prod).
+### 4. Modules
 
-+ Each workspace should deploy the same infrastructure (EC2 and S3) but with different configurations (e.g., different tags or bucket names).
++ Break down the infrastructure into reusable modules:
+    
+    + VPC Module: Manage VPC, subnets, and routing tables.
+    + EC2 Module: Configure and launch EC2 instances.
+    + RDS Module: Set up the RDS MySQL database.
+    + S3 Module: Handle S3 bucket creation with versioning.
+    + IAM Module: Create and manage IAM roles and policies.
 
-+ Ensure that the state for each workspace is managed separately to prevent conflicts between environments.
+### 5. Functions
++ Use Terraform functions to dynamically configure:
+    
+    + The names of resources using format and join functions.
+    + Subnet CIDRs using cidrsubnet.
+    + Lookup values for AMI IDs using lookup function.
 
-### Key Tasks:
+### 6. Workspaces
 
-### 1. Module Development:
++  Create workspaces for different environments (e.g., development, staging, production).
++  Deploy the infrastructure in each environment using the appropriate workspace.
 
-+ Module Setup: Create a directory for the module (e.g., modules/aws_infrastructure).
+### 7. Lifecycle Rules
+
++ Implement lifecycle rules to:
+    + Prevent resource deletion: Ensure certain resources, like the RDS database, are not accidentally deleted (prevent_destroy).
+    + Ignore changes to specific resource attributes (e.g., S3 bucket tags) using ignore_changes.
+
+### Project Steps
+
+#### Step 1: Setup Remote State and Locking
+
+1. Create an S3 bucket for storing Terraform state.
+2. Create a DynamoDB table for state locking.
+3. Configure the backend in Terraform to use the S3 bucket and DynamoDB table.
+
+#### Step 2: Develop and Organize Modules
+
+1. Develop separate modules for VPC, EC2, RDS, S3, and IAM.
+2. Place each module in a separate directory with main.tf, variables.tf, and outputs.tf.
+
++ Follow the Below structure
 
 ```css
-├── main.tf
-├── modules
-│   └── aws_infrastructure
-│       ├── main.tf
-│       ├── outputs.tf
-│       └── variables.tf
+ .
+ ├── modules
+ │   ├── ec2
+ │   │   ├── main.tf
+ │   │   ├── outputs.tf
+ │   │   └── variables.tf
+ │   ├── iam
+ │   │   ├── main.tf
+ │   │   ├── outputs.tf
+ │   │   └── variables.tf
+ │   ├── rds
+ │   │   ├── main.tf
+ │   │   ├── outputs.tf
+ │   │   └── variables.tf
+ │   ├── sg
+ │   │   ├── main.tf
+ │   │   ├── outputs.tf
+ │   │   └── variables.tf
+ │   └── vpc
+ │       ├── main.tf
+ │       ├── outputs.tf
+ │       └── variables.tf
+ ├── main.tf
+ ├── variables.tf
 ```
 
-+ Resource Definitions: Define the resources for an EC2 instance and an S3 bucket within the module.
 
-```hcl
-resource "aws_instance" "ec2_instance" {
-  ami            = var.ami_id
-  instance_type  = var.instance_type
-  key_name       = var.key_name
++ For ec2
+
+**```modules/ec2/main.tf```**
+
+```js
+resource "aws_instance" "yaksh_app" {
+  count                    = var.instance_count
+  ami                      = var.ami_id
+  instance_type            = var.instance_type
+  subnet_id                = element(var.public_subnet_ids, count.index)
+  key_name                 = var.key_name
+  associate_public_ip_address = true
+  security_groups          = [var.security_group_id]
 
   tags = {
-    Name = "my-ec2-instance-yaksh"
+    Name = "yaksh-app-instance-${count.index}"
   }
 }
-
-
-resource "aws_s3_bucket" "s3_bucket" {
-  bucket = var.bucket_name
-}
-
 ```
 
-+ Variable Inputs: Define input variables for instance type, AMI ID, key pair name, and S3 bucket name.
+**```modules/ec2/varibales.tf```**
 
-```hcl
+
+```js
 variable "ami_id" {
-  description = "AMI ID for the EC2 instance"
+  description = "AMI ID for EC2 instances"
   type        = string
 }
 
 variable "instance_type" {
-  description = "Type of the EC2 instance"
+  description = "EC2 instance type"
   type        = string
+}
+
+variable "instance_count" {
+  description = "Number of EC2 instances"
+  type        = number
+}
+
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs"
+  type        = list(string)
 }
 
 variable "key_name" {
   description = "Name of the SSH key pair"
   type        = string
+  default    = "My_key"
 }
 
-variable "bucket_name" {
-  description = "Name of the S3 bucket"
-  type        = string
-}
-
-variable "private_key_path" {
-  description = "Path to the private key for SSH access"
+variable "security_group_id" {
+  description = "Security Group ID for EC2 instances"
   type        = string
 }
 ```
 
-+ Outputs: Define outputs for the EC2 instance's public IP and the S3 bucket's ARN.
++ For IAM we are going to define only ec2 read policy
 
-```hcl
-output "ec2_instance_public_ip" {
-  description = "Public IP of the EC2 instance"
-  value       = aws_instance.ec2_instance.public_ip
+**```modules/IAM/main.tf```**
+
+```js
+resource "aws_iam_role" "yaksh_ec2_role" {
+  name = "yaksh-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "yaksh-ec2-role"
+  }
 }
 
-output "s3_bucket_arn" {
-  description = "ARN of the S3 bucket"
-  value       = aws_s3_bucket.s3_bucket.arn
+resource "aws_iam_role_policy_attachment" "yaksh_ec2_policy_attachment" {
+  role       = aws_iam_role.yaksh_ec2_role.name
+  policy_arn  = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
 }
 ```
+
+**```modules/IAM/outputs.tf```**
+
+```js
+output "iam_role_arn" {
+  value = aws_iam_role.yaksh_ec2_role.arn
+}
+```
+
+
++ For RDS
+
+**```modules/rds/main.tf```**
+
+
+```js
+resource "aws_db_instance" "yaksh_db" {
+  allocated_storage    = 20
+  storage_type         = "gp2"
+  engine               = "mysql"
+  engine_version       = "8.0"
+  instance_class       = "db.t3.micro"
+  db_name                 = "yakshdb"
+  username             = var.db_username
+  password             = var.db_password
+  vpc_security_group_ids = [aws_security_group.yaksh_db_sg.id]
+  db_subnet_group_name = aws_db_subnet_group.yaksh_db_subnet_group.name
+  skip_final_snapshot  = true
+
+  tags = {
+    Name = "yaksh-db-instance"
+  }
+|}
+
+resource "aws_db_subnet_group" "yaksh_db_subnet_group" {
+  name       = "yaksh-db-subnet-group"
+  subnet_ids = var.private_subnet_ids
+  tags = {
+    Name = "yaksh-db-subnet-group"
+  }
+}
+
+resource "aws_security_group" "yaksh_db_sg" {
+  vpc_id = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  tags = {
+    Name = "yaksh-db-sg"
+  }
+}
+```
+**```modules/rds/varibales.tf```**
+
+```js
+variable "db_username" {
+  description = "Database username"
+  type        = string
+  
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs"
+  type        = list(string)
+}
+
+variable "vpc_id" {
+  description = "ID of the VPC"
+  type        = string
+}
+```
+
+#### Step 3: Define Variables and tfvars Files
+
+1. Define variables in variables.tf files within each module.
+
+```js
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets"
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for private subnets"
+  default     = ["10.0.3.0/24", "10.0.4.0/24"]
+}
+
+variable "availability_zones" {
+  description = "List of availability zones"
+  default     = ["ap-south-1a", "ap-south-1b"]
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  default     = "t2.micro"
+}
+
+variable "ami_id" {
+  description = "AMI ID for EC2 instances"
+  default     = "ami-0c2af51e265bd5e0e"
+}
+
+variable "db_username" {
+  description = "Database username"
+}
+
+variable "db_password" {
+  description = "Database password"
+  sensitive   = true
+}
+
+variable "s3_bucket_prefix" {
+  description = "Prefix for the S3 bucket name"
+}
+
+```
+
+2. Create a terraform.tfvars file with default values.
+
+```js
+vpc_cidr          = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.3.0/24", "10.0.4.0/24"]
+availability_zones = ["ap-south-1a", "ap-south-1b"]
+instance_type     = "t2.micro"
+ami_id            = "ami-0c2af51e265bd5e0e"
+db_username       = "admin"
+db_password       = "password"
+s3_bucket_prefix  = "yaksh-terraform-bucket"
+```
+
+
+3. Create separate environment-specific .tfvars files (e.g., dev.tfvars, prod.tfvars).
+
++ dev.tfvars
+
+```js
+vpc_cidr          = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.3.0/24", "10.0.4.0/24"]
+availability_zones = ["ap-south-1a", "ap-south-1b"]
+instance_type     = "t2.micro"
+ami_id            = "ami-0c2af51e265bd5e0e"
+db_username       = "user"
+db_password       = "password"
+s3_bucket_prefix  = "yaksh-dev-bucket"
+```
+
++ prod.tfvars
+
+```js
+vpc_cidr          = "10.1.0.0/16"
+public_subnet_cidrs = ["10.1.1.0/24", "10.1.2.0/24"]
+private_subnet_cidrs = ["10.1.3.0/24", "10.1.4.0/24"]
+availability_zones = ["ap-south-1a", "ap-south-1b"]
+instance_type     = "t3.micro"
+ami_id            = "ami-0c2af51e265bd5e0e"
+db_username       = "root"
+db_password       = "password"
+s3_bucket_prefix  = "yaksh-prod-bucket"
+```
+
+#### Step 4: Implement Workspaces
+
+1. Initialize Terraform and create workspaces (development, staging, production).
+
+```sh
+terraform workspace new dev
+terraform workspace new prod
+```
+
+2. Deploy infrastructure in each workspace using the appropriate .tfvars file.
+
+```sh
+terraform workspace select dev
+terraform apply -var-file=dev.tfvars -var="aws_profile=dev"
+```
+
+```sh
+terraform workspace select prod
+terraform apply -var-file=prod.tfvars -var="aws_profile=prod"
+```
+
+
+#### Step 5: Deploy the Infrastructure
+
+1. Use the terraform apply command to deploy the infrastructure in each workspace.
+
+<img src="./images/root_apply.png">
+
+2. Verify the deployment by accessing the EC2 instances and ensuring the application is running.
+
+<img src="./images/ec2.png">
+
+
+
+## Outputs
+
+<img src="./images/sg_one.png">
+
+<br>
 
 <img src="./images/bucket.png">
 
 <br>
 
-<img src="./images/instance.png">
+<img src="./images/rds.png">
 
 <br>
 
-### 2. Main Terraform Configuration:
-
-+ Main Config Setup: In the root directory, create a Terraform configuration that calls the custom module.
-
-+ Backend Configuration: Configure Terraform to use local state storage for simplicity (optional for Free Tier compliance).
-
-### 3. Provisioner Implementation:
-
-+ Remote Execution: Use the remote-exec provisioner to SSH into the EC2 instance and execute a script that installs Apache.
-
-```hcl
- provisioner "remote-exec" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y apache2",
-      "sudo systemctl start apache2",
-      "sudo systemctl enable apache2"
-    ]
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-  }
-```
-
-<img src="./images/ssh_success.png">
-
-+ Local Execution: Use the local-exec provisioner to print a confirmation message on the local machine after successful deployment.
-
-
-```hcl
-provisioner "local-exec" {
-  command = "echo 'EC2 instance successfully provisioned with Apache' >> terraform_output.log"
-}
-```
-
-### 4. Workspace Management:
-
-+ Workspace Creation: Create Terraform workspaces for dev and prod.
-
-+ Environment-Specific Configurations: Customize the EC2 instance tags and S3 bucket names for each workspace to differentiate between environments.
-
-+ Workspace Deployment: Deploy the infrastructure separately in the dev and prod workspaces.
-
-+ Create and switch to the dev workspace:
-
-```sh
-terraform workspace new dev
-```
-
-+ Deploy the infrastructure in the dev workspace:
-
-```sh
-terraform apply -auto-approve
-```
-
-+ Create and switch to the prod workspace:
-
-```sh
-terraform workspace new prod
-```
-+ Deploy the infrastructure in the prod workspace:
-
-```sh
-terraform apply -auto-approve
-```
-
-
-
-
-### 5. Validation and Testing:
-
-+ Apache Installation Verification: After the deployment, verify that Apache is installed and running on the EC2 instance by accessing the public IP address in a web browser.
+<img src="./images/route_table.png">
 
 <br>
 
-<img src="./images/apache_running.png">
+<img src="./images/vpc.png">
 
 <br>
 
-
-+ Provisioner Logs: Review the output from the local-exec provisioner to ensure it indicates successful deployment.
-
-<img src="./images/local_exec.png">
+<img src="./images/sg.png">
 
 
-### 6. Resource Cleanup:
-
-+ Destroy Resources: Use terraform destroy to remove the resources in both workspaces.
-
-<img src="./images/destroy_process.png">
+<img src="./images/iam.png">
 
 <br>
 
-<img src="./images/instance_destroy.png">
+<hr>
+
+
+#### Step 6: Implement Lifecycle Rules
+
+1. Modify the Terraform code to add lifecycle rules for critical resources.
+2. Apply the changes and verify that the lifecycle rules are in effect.
+
+
+#### Step 7: Cleanup
+
+1. Destroy the infrastructure in each workspace using terraform destroy.
+
+2. Ensure that resources marked with prevent_destroy are not deleted.
+
+<img src="./images/destroy_iam.png">
 
 <br>
 
+<img src="./images/destroy_all.png">
 
-
+<br>

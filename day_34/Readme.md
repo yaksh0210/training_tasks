@@ -1,423 +1,266 @@
-# Project
+# TASK 1- Installation of Grafana
 
-## Deploying a Multi-Tier Application Using Helm on Kubernetes and AWS Free Tier Services
+### Step :1 
 
-+ The use of Helm in Kubernetes with deploying and integrating free-tier AWS services. You will deploy a multi-tier application on Minikube using Helm, manage Helm charts, secrets, and RBAC, and integrate AWS services like S3 for storage and RDS (MySQL) for the database. The project will focus on versioning, packaging, rollback, and proper management of cloud resources.
++ Install the prerequisite packages:
 
-## Project Objectives:
-
-+ Deploy a multi-tier application using Helm on Minikube.
-+ Integrate AWS free-tier services (S3 and RDS).
-+ Manage Helm charts, including versioning, packaging, and rollbacks.
-+ Implement Helm secrets management and RBAC.
-+ Handle dependencies between different components of the application.
-
-## Project Deliverables:
-
-### 1. Setup Helm and Minikube
-
-+ Ensure Minikube is running.
-
-+ Install and configure Helm on the local machine.
-
-### 2. AWS Services Setup
-
-+ S3 Bucket: Create an S3 bucket for storing application assets (e.g., static files for the frontend).
-
-+ First we will create bucket with
++ (Prerequisite packages are software components or dependencies that are required for the installation or execution of a primary package, application, or software)
 
 ```sh
-aws s3api create-bucket --bucket yaksh-bucket --region ap-south-1 --create-bucket-configuration LocationConstraint=ap-south-1
+sudo apt-get install -y apt-transport-https software-properties-common wget
 ```
 
-+ Then we will upload file using
++ Import the GPG key:
+
+(Based on the provided search results, a GPG (GNU Privacy Guard) key is a cryptographic key used for encryption, decryption, signing, and verification of data and communications.)
 
 ```sh
-aws s3 cp /path/to/static/files/ s3://yaksh-bucket/ --recursive
+sudo mkdir -p /etc/apt/keyrings/
+
+wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
 ```
 
-+ RDS Instance: Set up an Amazon RDS MySQL instance in the free tier.
+<img src="./images/key_grafana.png">
+
++ To add a repository for stable releases, run the following command:
 
 ```sh
-aws rds create-db-instance \
-    --db-instance-identifier mydbinstance \
-    --allocated-storage 20 \
-    --db-instance-class db.t3.micro \
-    --engine mysql \
-    --master-username admin \
-    --master-user-password root1234 \
-    --backup-retention-period 7 \
-    --availability-zone ap-south-1a \
-    --no-multi-az \
-    --engine-version 8.0 \
-    --auto-minor-version-upgrade \
-    --publicly-accessible \
-    --storage-type gp2 \
-    --db-name mydatabase \
-    --region ap-south-1
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
 ```
 
-<img src="./images/rds_create.png">
-
-### 3. Create Helm Charts
-
-
-+ Frontend Chart: Create a Helm chart for a frontend service (e.g., NGINX) that pulls static files from the S3 bucket.
++ Run the following command to update the list of available packages:
 
 ```sh
-helm create frontend
+sudo apt-get update
 ```
 
-+ Add Value in frontend/values.yml
-
-```yml
-replicaCount: 1
-
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  tag: latest
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-serviceAccount:
-  create: true
-  automount: true
-
-annotations: {}
-  name: ""
-
-podAnnotations: {}
-podLabels: {}
-
-podSecurityContext: {}
-# fsGroup: 2000
-
-securityContext: {}
-# capabilities:
-#   drop:
-#   - ALL
-# readOnlyRootFilesystem: true
-# runAsNonRoot: true
-# runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 80
-
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-  # kubernetes.io/ingress.class: nginx
-  # kubernetes.io/tls-acme: "true"
-  hosts:
-  - host: chart-example.local
-    paths:
-    - path: /
-      pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-
-resources: {}
-# We usually recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with little
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-# limits:
-#   cpu: 100m
-#   memory: 128Mi
-# requests:
-#   cpu: 100m
-#   memory: 128Mi
-
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-# Additional volumes on the output Deployment definition.
-volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
-
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
-
-files:
-  staticUrl: "https://yaksh-bucket.s3.ap-south-1.amazonaws.com"
-```
-
-+ Backend Chart: Create a Helm chart for a backend service (e.g., a Python Flask API) that connects to the RDS MySQL database.
++ To install Grafana OSS, run the following command:
 
 ```sh
-helm create backend
+# Installs the latest OSS release:
+
+sudo apt-get install grafana
 ```
 
-+ For backend/values.yml
+<img src="./images/inst_grafana.png">
 
-
-```yml
-# Default values for backend.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-replicaCount: 1
-
-image:
-  repository: fansari9993/test9
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: tagname
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
-
-podAnnotations: {}
-podLabels: {}
-
-podSecurityContext: {}
-# fsGroup: 2000
-
-securityContext: {}
-
-service:
-  type: ClusterIP
-  port: 5000
-
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-
-hosts:
-  - host: chart-example.local
-    paths:
-    - path: /
-      pathType: ImplementationSpecific
-  tls: []
-
-resources: {}
-
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-
-volumes: []
-
-volumeMounts: []
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
-
-database:
-  host: "mydbinstance.cxqq6ia24yor.ap-south-1.rds.amazonaws.com"
-  name: "mydbinstance"
-  user: "admin"
-  password: "root1234"
-  port: 3306
-
-```
-
-### 4. Package Helm Charts
-
-+ Package each Helm chart into a .tgz file.
++ To install Grafana Enterprise, run the following command:
 
 ```sh
-cd frontend/
-helm package .
-mv frontend-0.1.0.tgz ../
+sudo apt-get install grafana-enterprise
 ```
+
+<img src="./images/grafana_server.png">
+
+
++ Verify installation 
 
 ```sh
+grafana-cli --version
+```
+
+<img src="./images/verify.png">
+
+
+
++ Now once it get installed start the server using
 
 ```sh
-cd backend/
-helm package .
-mv backend-0.1.0.tgz ../
+sudo systemctl start grafana-server.service
 ```
 
-+ Ensure charts are properly versioned.
-
-<img src="./images/pkg_frontens.png">
-
-<br>
-
-<img src="./images/pkg_backend.png">
-
-<br>
-
-### 5. Deploy Multi-Tier Application Using Helm
-
-+ Deploy the database chart (connected to the RDS instance).
-
-+ Deploy the backend chart with dependency on the database chart.
-
-+ Deploy the frontend chart with dependency on the backend service, ensuring it pulls assets from the S3 bucket.
++ And Then verify using 
 
 ```sh
-helm install frontend ./frontend-0.1.0.tgz
+sudo systemctl status grafana-server.service
 ```
 
-```sh
-helm install backend ./backend-0.1.0.tgz
-```
-
-<img src="./images/inst_frontend.png">
-
-<br>
-
-<img src="./images/inst_backend.png">
-
-### 6. Manage Helm Secrets
-
-+ Implement Helm secrets for managing sensitive data such as database credentials and S3 access keys.
-
-```
-helm plugin install https://github.com/jkroepke/helm-secrets
-```
-
-+ Update the backend chart to use these secrets for connecting to the RDS instance and S3.
-
-+ Secrets.yml
-
-```yml
-database:
-  password: "root1233"
-aws:
-  access_key: "your-access-key"
-  secret_key: "your-secret-key"
-```
+<img src="./images/start_service.png">
 
 
-### 7. Implement RBAC
++ Then redirect to http://localhost:3000/login to see running grafana and login using admin credentials
 
-+ Define RBAC roles and role bindings to manage permissions for Helm deployments.
++ Then we will create a sample dashboard 
 
-+ Ensure that only authorized users can deploy or modify the Helm releases.
-
-+ rbac.yml
+<img src="./images/step2.png">
 
 
-```yml
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  namespace: default
-  name: helm-role
-rules:
-- apiGroups: ["", "apps", "extensions"]
-  resources: ["pods", "deployments", "services", "secrets", "configmaps"]
-  verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
++ Then next step is to selection of dataset
+
+<img src="./images/create_dash.png">
+
++ And a demo dashboard will look like
+
+<img src="./images/dashboard.png">
+
+<hr>
+
+# Task 2 : Connection of worker node with master using kubeadm
+
+
+# Kubernetes Cluster Setup
+
+This guide outlines the steps to set up a Kubernetes cluster using containerd as the container runtime and Calico for networking. Follow these instructions on both the Control Plane node and Worker nodes.
+
+## Prerequisites
+
+- Ubuntu 20.04 or later
+- Access to all nodes (Control Plane and Worker nodes)
+- Root or sudo access on all nodes
+
+## 1. Install Packages on All Nodes
+
+### Log in to Each Node
+
+1. **Control Plane Node**
+
+    ```sh
+    ssh user@control-plane-node
+    ```
+
+2. **Worker Nodes**
+
+    ```sh
+    ssh user@worker-node-1
+    ssh user@worker-node-2
+    ```
+
+### Configure Containerd
+
+1. **Create Configuration File:**
+
+    ```sh
+    cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
+    overlay
+    br_netfilter
+    EOF
+    ```
+
+2. **Load Modules:**
+
+    ```sh
+    sudo modprobe overlay
+    sudo modprobe br_netfilter
+    ```
+
+3. **Set System Configurations:**
+
+    ```sh
+    cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+    net.bridge.bridge-nf-call-iptables = 1
+    net.ipv4.ip_forward = 1
+    net.bridge.bridge-nf-call-ip6tables = 1
+    EOF
+    sudo sysctl --system
+    ```
+
+4. **Install containerd:**
+
+    ```sh
+    sudo apt-get update && sudo apt-get install -y containerd.io
+    ```
+
+5. **Create and Generate Default Configuration:**
+
+    ```sh
+    sudo mkdir -p /etc/containerd
+    sudo containerd config default | sudo tee /etc/containerd/config.toml
+    sudo systemctl restart containerd
+    ```
+
+6. **Verify containerd is Running:**
+
+    ```sh
+    sudo systemctl status containerd
+    ```
+
+7. **Disable Swap:**
+
+    ```sh
+    sudo swapoff -a
+    ```
+
+8. **Install Dependency Packages:**
+
+    ```sh
+    sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+    ```
+
+9. **Add Kubernetes GPG Key and Repository:**
+
+    ```sh
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.27/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.27/deb/ /
+    EOF
+    sudo apt-get update
+    ```
+
+10. **Install Kubernetes Packages:**
+
+    ```sh
+    sudo apt-get install -y kubelet kubeadm kubectl
+    sudo apt-mark hold kubelet kubeadm kubectl
+    ```
+
+## 2. Initialize the Cluster on the Control Plane Node
+
+1. **Initialize Kubernetes:**
+
+    ```sh
+    sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version 1.27.11
+    ```
+
+2. **Set kubectl Access:**
+
+    ```sh
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    ```
+
+3. **Test Access:**
+
+    ```sh
+    kubectl get nodes
+    ```
+
+## 3. Install the Calico Network Add-On
+
+1. **Apply Calico Manifest:**
+
+    ```sh
+    kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
+    ```
+
+2. **Check Node Status:**
+
+    ```sh
+    kubectl get nodes
+    ```
+
+## 4. Join Worker Nodes to the Cluster
+
+1. **Create Join Command on Control Plane Node:**
+
+    ```sh
+    kubeadm token create --print-join-command
+    ```
+
+2. **Run Join Command on Each Worker Node:**
+
+    ```sh
+    sudo kubeadm join <control-plane-endpoint>
+    ```
+
+3. **Verify Cluster Status on Control Plane Node:**
+
+    ```sh
+    kubectl get nodes
+    ```
+
+    Note: It may take a few moments for all nodes to become ready.
 ---
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: helm-rolebinding
-  namespace: default
-subjects:
-- kind: User
-  name: helm-user
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: Role
-  name: helm-role
-  apiGroup: rbac.authorization.k8s.io
-```
 
-+ Then run
+<img src="./images/kubeadm_node_connect.png">
 
-```sh
-kubectl apply -f rbac.yaml
-```
-<img src="./images/role.png">
-
-### 8. Versioning and Rollback
-
-+ Update the version of one of the Helm charts (e.g., update the frontend service).
-
-
-<img src="./images/upgrade_frontend.png">
-
-+ Perform a rollback if necessary and validate the application functionality.
-
-<img src="./images/rollback_frontend.png">
-
-### 9. Validate Deployment
-
-+ Ensure the frontend service is serving files from the S3 bucket.
-
-<img src="./images/bucket.png">
-
-+ Validate that the backend service is successfully communicating with the RDS MySQL database.
-
-<img src="./images/rds_create.png">
-
-### 10. Cleanup
-
-+ Delete all Helm releases and Kubernetes resources created during the project.
-
-+ Terminate the RDS instance and delete the S3 bucket.
-
-+ Stop Minikube if no longer needed.
-
-```sh
-helm uninstall frontend
-helm uninstall backend
-aws s3 rm s3://your-bucket-name/ --recursive
-aws rds delete-db-instance --db-instance-identifier mydbinstance --skip-final-snapshot
-minikube stop
-minikube delete
-```
